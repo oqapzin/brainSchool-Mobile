@@ -1,0 +1,26 @@
+# Dependências
+node_modules/
+**/node_modules/
+
+# Expo
+.expo/
+**/.expo/
+dist/
+**/dist/
+web-build/
+expo-env.d.ts
+
+# Ambiente e Segredos
+.env
+.env.*
+!.env.example
+!**/.env.example
+
+# Sistema Operacional e Logs
+.DS_Store
+**/.DS_Store
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+coverage/
+**/coverage/
