@@ -1,6 +1,7 @@
 services:
   db:
     image: postgres:16-alpine
+    container_name: pos-blog-db
     restart: unless-stopped
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-blog_db}
@@ -21,6 +22,7 @@ services:
 
   backend:
     image: ${BACKEND_IMAGE:-braincodeschool-backend:local}
+    container_name: pos-blog-backend
     build:
       context: ./back-end
       dockerfile: Dockerfile
@@ -55,8 +57,37 @@ services:
     networks:
       - app-network
 
+  mobile:
+    image: ${MOBILE_IMAGE:-braincodeschool-mobile:local}
+    container_name: pos-blog-mobile
+    build:
+      context: ./mobile
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    stdin_open: true
+    tty: true
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+      EXPO_PUBLIC_API_URL: ${EXPO_PUBLIC_API_URL:-}
+      EXPO_DEVTOOLS_LISTEN_ADDRESS: 0.0.0.0
+      REACT_NATIVE_PACKAGER_HOSTNAME: ${REACT_NATIVE_PACKAGER_HOSTNAME:-localhost}
+    ports:
+      - "${EXPO_METRO_PORT:-8081}:8081"
+      - "19000:19000"
+      - "19001:19001"
+      - "19002:19002"
+    volumes:
+      - ./mobile:/usr/src/app
+      - mobile_node_modules:/usr/src/app/node_modules
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - app-network
+
 volumes:
   postgres-data:
+  mobile_node_modules:
 
 networks:
   app-network:

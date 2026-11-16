@@ -10,9 +10,9 @@ async function bootstrap() {
     rawCors.trim() === '*'
       ? true
       : rawCors
-          .split(',')
-          .map((origin) => origin.trim())
-          .filter(Boolean);
+        .split(',')
+        .map((origin) => origin.trim())
+        .filter(Boolean);
   app.enableCors({ origin: corsOrigins });
 
   app.useGlobalPipes(
@@ -26,7 +26,7 @@ async function bootstrap() {
   const config = new DocumentBuilder()
     .setTitle('Blog API - Tech Challenge Fase 02')
     .setDescription(
-      'API REST para plataforma de blogging dinâmico voltada a professores e alunos da rede pública de educação.',
+      'API REST para plataforma de Blog dinâmico voltada a professores e alunos da rede pública de educação.',
     )
     .setVersion('1.0')
     .addTag('posts', 'Operações relacionadas às postagens do blog')

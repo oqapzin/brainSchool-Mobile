@@ -14,7 +14,7 @@ import { useAuth } from '../../src/contexts/AuthContext';
 import { PostItem } from '../../src/types';
 
 export default function AdminPostsScreen() {
-  const { isTeacher } = useAuth();
+  const { isTeacher, user } = useAuth();
   const [posts, setPosts] = useState<PostItem[]>([]);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
@@ -93,31 +93,36 @@ export default function AdminPostsScreen() {
           ListEmptyComponent={
             <Text style={styles.emptyText}>Nenhuma postagem cadastrada.</Text>
           }
-          renderItem={({ item }) => (
-            <View style={styles.card}>
-              <View style={styles.cardInfo}>
-                <Text style={styles.postTitle}>{item.title}</Text>
-                <Text style={styles.postMeta}>
-                  Autor: {item.author} •{' '}
-                  {new Date(item.createdAt).toLocaleDateString('pt-BR')}
-                </Text>
+          renderItem={({ item }) => {
+            const isPostOwner = isTeacher && user?.username === item.author;
+            return (
+              <View style={styles.card}>
+                <View style={styles.cardInfo}>
+                  <Text style={styles.postTitle}>{item.title}</Text>
+                  <Text style={styles.postMeta}>
+                    Autor: {item.author} •{' '}
+                    {new Date(item.createdAt).toLocaleDateString('pt-BR')}
+                  </Text>
+                </View>
+                {isPostOwner && (
+                  <View style={styles.actions}>
+                    <TouchableOpacity
+                      style={styles.editBtn}
+                      onPress={() => router.push(`/post/edit/${item.id}`)}
+                    >
+                      <Text style={styles.actionText}>Editar</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.deleteBtn}
+                      onPress={() => handleDelete(item)}
+                    >
+                      <Text style={styles.actionText}>Excluir</Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
               </View>
-              <View style={styles.actions}>
-                <TouchableOpacity
-                  style={styles.editBtn}
-                  onPress={() => router.push(`/post/edit/${item.id}`)}
-                >
-                  <Text style={styles.actionText}>Editar</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.deleteBtn}
-                  onPress={() => handleDelete(item)}
-                >
-                  <Text style={styles.actionText}>Excluir</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          )}
+            );
+          }}
         />
       )}
     </View>

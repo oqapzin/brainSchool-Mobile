@@ -93,6 +93,8 @@ export default function PostDetailScreen() {
     );
   }
 
+  const canManagePost = isTeacher && user?.username === post.author;
+
   return (
     <ScrollView style={styles.container}>
       <Text style={styles.title}>{post.title}</Text>
@@ -101,7 +103,7 @@ export default function PostDetailScreen() {
         {new Date(post.createdAt).toLocaleDateString('pt-BR')}
       </Text>
 
-      {isTeacher && (
+      {canManagePost && (
         <View style={styles.adminActions}>
           <TouchableOpacity
             style={styles.editBtn}

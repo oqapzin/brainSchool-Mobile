@@ -26,6 +26,7 @@ describe('PostsService', () => {
   };
 
   const mockRepository = {
+    count: jest.fn(),
     create: jest.fn(),
     save: jest.fn(),
     find: jest.fn(),

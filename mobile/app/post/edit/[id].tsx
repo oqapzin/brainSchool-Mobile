@@ -16,7 +16,7 @@ import { PostItem } from '../../../src/types';
 
 export default function EditPostScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { isTeacher } = useAuth();
+  const { isTeacher, user } = useAuth();
   const router = useRouter();
 
   const [title, setTitle] = useState('');
@@ -29,6 +29,14 @@ export default function EditPostScreen() {
     async function loadPost() {
       try {
         const response = await api.get<PostItem>(`/posts/${id}`);
+        if (response.data.author !== user?.username) {
+          Alert.alert(
+            'Acesso negado',
+            'Você só pode editar postagens de sua própria autoria.'
+          );
+          router.replace('/(tabs)');
+          return;
+        }
         setTitle(response.data.title);
         setAuthor(response.data.author);
         setContent(response.data.content);
@@ -42,7 +50,7 @@ export default function EditPostScreen() {
     if (isTeacher) {
       loadPost();
     }
-  }, [id, isTeacher]);
+  }, [id, isTeacher, user?.username]);
 
   if (!isTeacher) {
     return <Redirect href="/(tabs)" />;

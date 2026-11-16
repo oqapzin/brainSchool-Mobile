@@ -16,6 +16,10 @@ expo-env.d.ts
 !.env.example
 !**/.env.example
 
+# Documentação Técnica Local
+docs/
+docs/arquitetura-mobile.md
+
 # Sistema Operacional e Logs
 .DS_Store
 **/.DS_Store

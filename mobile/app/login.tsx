@@ -16,13 +16,20 @@ import { useAuth } from '../src/contexts/AuthContext';
 export default function LoginScreen() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const { signIn } = useAuth();
   const router = useRouter();
 
   const handleLogin = async () => {
+    setErrorMessage(null);
+
     if (!username.trim() || !password.trim()) {
-      Alert.alert('Atenção', 'Preencha seu usuário e senha.');
+      const msg = 'Preencha seu usuário e senha.';
+      setErrorMessage(msg);
+      if (Platform.OS !== 'web') {
+        Alert.alert('Atenção', msg);
+      }
       return;
     }
 
@@ -31,16 +38,23 @@ export default function LoginScreen() {
       await signIn(username.trim(), password);
       router.replace('/(tabs)');
     } catch (error: any) {
-      const msg =
-        error.response?.data?.message ||
-        'Credenciais inválidas ou servidor indisponível.';
-      Alert.alert('Erro de Autenticação', String(msg));
+      const rawMsg = error.response?.data?.message;
+      const formattedMsg = Array.isArray(rawMsg)
+        ? rawMsg.join(' ')
+        : rawMsg === 'Credenciais inválidas'
+          ? 'Usuário ou senha inválidos. Verifique suas credenciais.'
+          : rawMsg || 'Credenciais inválidas ou servidor indisponível.';
+      setErrorMessage(String(formattedMsg));
+      if (Platform.OS !== 'web') {
+        Alert.alert('Erro de Autenticação', String(formattedMsg));
+      }
     } finally {
       setSubmitting(false);
     }
   };
 
   const fillCredentials = (roleUser: 'professor' | 'aluno') => {
+    setErrorMessage(null);
     setUsername(roleUser);
     setPassword('senha123');
   };
@@ -51,11 +65,16 @@ export default function LoginScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <View style={styles.card}>
-        <Text style={styles.badge}>POS TECH • FASE 04</Text>
-        <Text style={styles.title}>Blog Escolar</Text>
+        <Text style={styles.title}>BrainSchool - Blog Escolar</Text>
         <Text style={styles.subtitle}>
-          Plataforma de Blogging Dinâmico para Docentes e Estudantes
+          Plataforma de Blog Dinâmico para Docentes e Estudantes
         </Text>
+
+        {errorMessage && (
+          <View style={styles.errorBox}>
+            <Text style={styles.errorText}>{errorMessage}</Text>
+          </View>
+        )}
 
         <Text style={styles.label}>Usuário</Text>
         <TextInput
@@ -63,7 +82,10 @@ export default function LoginScreen() {
           placeholder="Digite seu usuário"
           autoCapitalize="none"
           value={username}
-          onChangeText={setUsername}
+          onChangeText={(text) => {
+            setUsername(text);
+            if (errorMessage) setErrorMessage(null);
+          }}
         />
 
         <Text style={styles.label}>Senha</Text>
@@ -72,7 +94,10 @@ export default function LoginScreen() {
           placeholder="Digite sua senha"
           secureTextEntry
           value={password}
-          onChangeText={setPassword}
+          onChangeText={(text) => {
+            setPassword(text);
+            if (errorMessage) setErrorMessage(null);
+          }}
         />
 
         <TouchableOpacity
@@ -141,6 +166,20 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 4,
     marginBottom: 24,
+  },
+  errorBox: {
+    backgroundColor: '#FEF2F2',
+    borderWidth: 1,
+    borderColor: '#FECACA',
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 16,
+  },
+  errorText: {
+    color: '#DC2626',
+    fontSize: 13,
+    fontWeight: '600',
+    textAlign: 'center',
   },
   label: {
     fontSize: 13,
