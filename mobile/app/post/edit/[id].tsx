@@ -8,6 +8,8 @@ import {
   Alert,
   ScrollView,
   ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { useLocalSearchParams, useRouter, Redirect } from 'expo-router';
 import { api } from '../../../src/services/api';
@@ -91,45 +93,58 @@ export default function EditPostScreen() {
   };
 
   return (
-    <ScrollView style={styles.container}>
-      <Text style={styles.label}>Título da Postagem</Text>
-      <TextInput
-        style={styles.input}
-        value={title}
-        onChangeText={setTitle}
-      />
-
-      <Text style={styles.label}>Autor</Text>
-      <TextInput
-        style={styles.input}
-        value={author}
-        onChangeText={setAuthor}
-      />
-
-      <Text style={styles.label}>Conteúdo Completo</Text>
-      <TextInput
-        style={[styles.input, styles.textArea]}
-        value={content}
-        onChangeText={setContent}
-        multiline
-        textAlignVertical="top"
-      />
-
-      <TouchableOpacity
-        style={styles.saveButton}
-        onPress={handleUpdate}
-        disabled={saving}
+    <KeyboardAvoidingView
+      style={styles.screen}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
       >
-        <Text style={styles.saveButtonText}>
-          {saving ? 'Salvando alterações...' : 'Salvar Alterações'}
-        </Text>
-      </TouchableOpacity>
-    </ScrollView>
+        <Text style={styles.label}>Título da Postagem</Text>
+        <TextInput
+          style={styles.input}
+          value={title}
+          onChangeText={setTitle}
+        />
+
+        <Text style={styles.label}>Autor</Text>
+        <TextInput
+          style={styles.input}
+          value={author}
+          onChangeText={setAuthor}
+        />
+
+        <Text style={styles.label}>Conteúdo Completo</Text>
+        <TextInput
+          style={[styles.input, styles.textArea]}
+          value={content}
+          onChangeText={setContent}
+          multiline
+          textAlignVertical="top"
+        />
+      </ScrollView>
+
+      <View style={styles.footer}>
+        <TouchableOpacity
+          style={styles.saveButton}
+          onPress={handleUpdate}
+          disabled={saving}
+        >
+          <Text style={styles.saveButtonText}>
+            {saving ? 'Salvando alterações...' : 'Salvar Alterações'}
+          </Text>
+        </TouchableOpacity>
+      </View>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F8FAFC', padding: 20 },
+  screen: { flex: 1, backgroundColor: '#F8FAFC' },
+  container: { flex: 1 },
+  scrollContent: { padding: 20, paddingBottom: 24 },
   label: { fontSize: 14, fontWeight: '600', color: '#334155', marginBottom: 6 },
   input: {
     backgroundColor: '#FFF',
@@ -140,13 +155,20 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     fontSize: 15,
   },
-  textArea: { minHeight: 180 },
+  textArea: { minHeight: 180, maxHeight: 280 },
+  footer: {
+    backgroundColor: '#FFF',
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: 28,
+    borderTopWidth: 1,
+    borderTopColor: '#E2E8F0',
+  },
   saveButton: {
     backgroundColor: '#2563EB',
     padding: 16,
     borderRadius: 8,
     alignItems: 'center',
-    marginTop: 8,
   },
   saveButtonText: { color: '#FFF', fontWeight: '700', fontSize: 16 },
 });

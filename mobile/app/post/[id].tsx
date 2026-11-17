@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -8,6 +8,9 @@ import {
   StyleSheet,
   Alert,
   ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+  Keyboard,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { api } from '../../src/services/api';
@@ -22,6 +25,25 @@ export default function PostDetailScreen() {
   const [loading, setLoading] = useState(true);
   const { isTeacher, user } = useAuth();
   const router = useRouter();
+  const scrollViewRef = useRef<ScrollView>(null);
+  const isInputFocusedRef = useRef(false);
+
+  const scrollToCommentInput = () => {
+    setTimeout(() => {
+      scrollViewRef.current?.scrollToEnd({ animated: true });
+    }, 150);
+  };
+
+  useEffect(() => {
+    const showEvent =
+      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const sub = Keyboard.addListener(showEvent, () => {
+      if (isInputFocusedRef.current) {
+        scrollToCommentInput();
+      }
+    });
+    return () => sub.remove();
+  }, []);
 
   const loadPostAndComments = async () => {
     try {
@@ -70,6 +92,7 @@ export default function PostDetailScreen() {
     try {
       await api.post(`/posts/${id}/comments`, { content: newComment.trim() });
       setNewComment('');
+      Keyboard.dismiss();
       loadPostAndComments();
     } catch {
       Alert.alert('Erro', 'Não foi possível publicar o comentário.');
@@ -96,67 +119,96 @@ export default function PostDetailScreen() {
   const canManagePost = isTeacher && user?.username === post.author;
 
   return (
-    <ScrollView style={styles.container}>
-      <Text style={styles.title}>{post.title}</Text>
-      <Text style={styles.meta}>
-        Por {post.author} • Publicado em{' '}
-        {new Date(post.createdAt).toLocaleDateString('pt-BR')}
-      </Text>
+    <KeyboardAvoidingView
+      style={styles.screen}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 100 : 80}
+    >
+      <ScrollView
+        ref={scrollViewRef}
+        style={styles.container}
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+      >
+        <Text style={styles.title}>{post.title}</Text>
+        <Text style={styles.meta}>
+          Por {post.author} • Publicado em{' '}
+          {new Date(post.createdAt).toLocaleDateString('pt-BR')}
+        </Text>
 
-      {canManagePost && (
-        <View style={styles.adminActions}>
-          <TouchableOpacity
-            style={styles.editBtn}
-            onPress={() => router.push(`/post/edit/${post.id}`)}
-          >
-            <Text style={styles.btnText}>Editar Postagem</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.deleteBtn} onPress={handleDeletePost}>
-            <Text style={styles.btnText}>Excluir Postagem</Text>
-          </TouchableOpacity>
-        </View>
-      )}
+        {canManagePost && (
+          <View style={styles.adminActions}>
+            <TouchableOpacity
+              style={styles.editBtn}
+              onPress={() => router.push(`/post/edit/${post.id}`)}
+            >
+              <Text style={styles.btnText}>Editar Postagem</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.deleteBtn}
+              onPress={handleDeletePost}
+            >
+              <Text style={styles.btnText}>Excluir Postagem</Text>
+            </TouchableOpacity>
+          </View>
+        )}
 
-      <Text style={styles.content}>{post.content}</Text>
+        <Text style={styles.content}>{post.content}</Text>
 
-      <View style={styles.commentsSection}>
-        <Text style={styles.sectionTitle}>Comentários ({comments.length})</Text>
+        <View style={styles.commentsSection}>
+          <Text style={styles.sectionTitle}>
+            Comentários ({comments.length})
+          </Text>
 
-        {comments.map((c) => {
-          const canDeleteComment = isTeacher || c.author?.id === user?.id;
-          return (
-            <View key={c.id} style={styles.commentCard}>
-              <View style={styles.commentHeader}>
-                <Text style={styles.commentAuthor}>@{c.author?.username}</Text>
-                {canDeleteComment && (
-                  <TouchableOpacity onPress={() => handleDeleteComment(c.id)}>
-                    <Text style={styles.deleteCommentText}>Excluir</Text>
-                  </TouchableOpacity>
-                )}
+          {comments.map((c) => {
+            const canDeleteComment = isTeacher || c.author?.id === user?.id;
+            return (
+              <View key={c.id} style={styles.commentCard}>
+                <View style={styles.commentHeader}>
+                  <Text style={styles.commentAuthor}>
+                    @{c.author?.username}
+                  </Text>
+                  {canDeleteComment && (
+                    <TouchableOpacity onPress={() => handleDeleteComment(c.id)}>
+                      <Text style={styles.deleteCommentText}>Excluir</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+                <Text style={styles.commentText}>{c.content}</Text>
               </View>
-              <Text style={styles.commentText}>{c.content}</Text>
-            </View>
-          );
-        })}
+            );
+          })}
 
-        <View style={styles.commentInputRow}>
-          <TextInput
-            style={styles.commentInput}
-            placeholder="Escreva um comentário..."
-            value={newComment}
-            onChangeText={setNewComment}
-          />
-          <TouchableOpacity style={styles.sendBtn} onPress={handleAddComment}>
-            <Text style={styles.btnText}>Enviar</Text>
-          </TouchableOpacity>
+          <View style={styles.commentInputRow}>
+            <TextInput
+              style={styles.commentInput}
+              placeholder="Escreva um comentário..."
+              value={newComment}
+              onChangeText={setNewComment}
+              onFocus={() => {
+                isInputFocusedRef.current = true;
+                scrollToCommentInput();
+              }}
+              onBlur={() => {
+                isInputFocusedRef.current = false;
+              }}
+              returnKeyType="send"
+              onSubmitEditing={handleAddComment}
+            />
+            <TouchableOpacity style={styles.sendBtn} onPress={handleAddComment}>
+              <Text style={styles.btnText}>Enviar</Text>
+            </TouchableOpacity>
+          </View>
         </View>
-      </View>
-    </ScrollView>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#FFF', padding: 20 },
+  screen: { flex: 1, backgroundColor: '#FFF' },
+  container: { flex: 1, backgroundColor: '#FFF' },
+  scrollContent: { padding: 20, paddingBottom: 40 },
   title: { fontSize: 24, fontWeight: '800', color: '#0F172A' },
   meta: { fontSize: 13, color: '#64748B', marginTop: 6, marginBottom: 16 },
   adminActions: { flexDirection: 'row', gap: 10, marginBottom: 20 },
